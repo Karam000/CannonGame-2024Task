@@ -29,6 +29,8 @@ public class Bullet : MonoBehaviour
         initialAngle = thetao_rad;
         startTime = Time.time;
         allSet = true;
+        CannonRotator.instance.canRecoil = true;
+
     }
 
     //x = Vo* cos(THETAo) * t

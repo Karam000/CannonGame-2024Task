@@ -31,6 +31,5 @@ public class BulletMaker : MonoBehaviour
 
         spawnedBullet.InitBulletForShooting(speed, firingAngle,target);
 
-        CannonRotator.instance.canRecoil = true;
     }
 }

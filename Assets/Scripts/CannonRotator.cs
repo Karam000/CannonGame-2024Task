@@ -9,7 +9,6 @@ public class CannonRotator : MonoBehaviour
     [SerializeField] public Transform firingPosition;
     [SerializeField] float recoilDistance;
     [SerializeField] float recoilSpeed;
-    [SerializeField] float recoilPeriod;
     [SerializeField] Transform startingRecoilTransform;
     public float v = 15;
 
@@ -40,6 +39,8 @@ public class CannonRotator : MonoBehaviour
     {
         if (canRecoil)
             Recoil();
+
+        else if (canRevertRecoil) RevertRecoil();
     }
     Vector3 targetVec;
     private void AimCannon()
@@ -74,11 +75,12 @@ public class CannonRotator : MonoBehaviour
     float recoilElapsedTime;
     
     [HideInInspector] public bool canRecoil;
+    bool canRevertRecoil;
 
     private void Recoil()
     {
         float movedSpace = Vector3.Distance(this.transform.position, startingRecoilTransform.position);
-        print(movedSpace);
+        print("RECOIL " + movedSpace);
         if ( movedSpace <= recoilDistance)
         {
             this.transform.position -= (this.transform.forward * recoilSpeed * Time.fixedDeltaTime); 
@@ -86,7 +88,22 @@ public class CannonRotator : MonoBehaviour
         else
         {
             canRecoil = false;
-            startingRecoilTransform = null;
+            canRevertRecoil = true;
+        }
+    }
+
+    private void RevertRecoil()
+    {
+        float movedSpace = Vector3.Distance(this.transform.position, startingRecoilTransform.position);
+        print("revert " + movedSpace);
+
+        if (movedSpace > 0)
+        {
+            this.transform.position = Vector3.MoveTowards(this.transform.position, startingRecoilTransform.position, recoilSpeed * Time.fixedDeltaTime / 10);
+        }
+        else
+        {
+            canRevertRecoil=false;
         }
     }
 

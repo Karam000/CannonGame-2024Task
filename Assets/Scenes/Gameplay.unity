@@ -904,11 +904,10 @@ MonoBehaviour:
   rotatingPart: {fileID: 1204483068}
   enemy: {fileID: 1129759342}
   firingPosition: {fileID: 938244456}
-  recoilDistance: 1.5
-  recoilSpeed: 10
-  recoilPeriod: 1
+  recoilDistance: 1.7
+  recoilSpeed: 15
   startingRecoilTransform: {fileID: 134560862}
-  v: 20
+  v: 30
   bulletEndPosition: {x: 0, y: 0, z: 0}
   canRecoil: 0
 --- !u!1 &1441454391
