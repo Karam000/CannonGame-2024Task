@@ -7,6 +7,10 @@ public class CannonRotator : MonoBehaviour
     [SerializeField] Transform rotatingPart;
     [SerializeField] public AIMovement enemy;
     [SerializeField] public Transform firingPosition;
+    [SerializeField] float recoilDistance;
+    [SerializeField] float recoilSpeed;
+    [SerializeField] float recoilPeriod;
+    [SerializeField] Transform startingRecoilTransform;
     public float v = 15;
 
     [HideInInspector] public float? angle;
@@ -20,10 +24,22 @@ public class CannonRotator : MonoBehaviour
         instance = this;
     }
 
-   
+    private void Start()
+    {
+       
+
+    }
     private void Update()
     {
         AimCannon();
+
+        
+    }
+
+    private void FixedUpdate()
+    {
+        if (canRecoil)
+            Recoil();
     }
     Vector3 targetVec;
     private void AimCannon()
@@ -42,8 +58,6 @@ public class CannonRotator : MonoBehaviour
         {
             angle = (float)lowAngle;
 
-            print("low " + angle);
-
             rotatingPart.localEulerAngles = new Vector3(360f - (float)angle, 0f, 0f);
 
             flightTime = targetVec.magnitude / (v * Mathf.Cos((float)angle * Mathf.Deg2Rad));
@@ -56,6 +70,24 @@ public class CannonRotator : MonoBehaviour
 
 
         if (highAngle == null && lowAngle == null) angle = null;
+    }
+    float recoilElapsedTime;
+    
+    [HideInInspector] public bool canRecoil;
+
+    private void Recoil()
+    {
+        float movedSpace = Vector3.Distance(this.transform.position, startingRecoilTransform.position);
+        print(movedSpace);
+        if ( movedSpace <= recoilDistance)
+        {
+            this.transform.position -= (this.transform.forward * recoilSpeed * Time.fixedDeltaTime); 
+        }
+        else
+        {
+            canRecoil = false;
+            startingRecoilTransform = null;
+        }
     }
 
     void CalculateAngleToHitTarget(out float? theta1, out float? theta2)

@@ -185,6 +185,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8735654832758247997, guid: a79fb7becd2809944a04265437378469, type: 3}
   m_PrefabInstance: {fileID: 16760499}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &134560861
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 134560862}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &134560862
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 134560861}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 14.9, y: 1.35, z: 14.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 7
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &218437583
 GameObject:
   m_ObjectHideFlags: 0
@@ -873,8 +904,13 @@ MonoBehaviour:
   rotatingPart: {fileID: 1204483068}
   enemy: {fileID: 1129759342}
   firingPosition: {fileID: 938244456}
+  recoilDistance: 1.5
+  recoilSpeed: 10
+  recoilPeriod: 1
+  startingRecoilTransform: {fileID: 134560862}
   v: 20
   bulletEndPosition: {x: 0, y: 0, z: 0}
+  canRecoil: 0
 --- !u!1 &1441454391
 GameObject:
   m_ObjectHideFlags: 0

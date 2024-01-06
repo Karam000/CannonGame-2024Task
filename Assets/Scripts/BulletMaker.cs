@@ -30,5 +30,7 @@ public class BulletMaker : MonoBehaviour
         firingAngle = (float)CannonRotator.instance.angle * Mathf.Deg2Rad;
 
         spawnedBullet.InitBulletForShooting(speed, firingAngle,target);
+
+        CannonRotator.instance.canRecoil = true;
     }
 }
