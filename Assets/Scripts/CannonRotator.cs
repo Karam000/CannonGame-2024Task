@@ -5,10 +5,24 @@ using UnityEngine;
 public class CannonRotator : MonoBehaviour
 {
     [SerializeField] Transform rotatingPart;
-    [SerializeField] Transform enemy;
-    [SerializeField] Transform firingPosition;
+    [SerializeField] public Transform enemy;
+    [SerializeField] float bulletDestinationOffset;
+    [SerializeField] public Transform firingPosition;
+    public float v = 15;
 
+    [HideInInspector] public float? angle;
 
+    public static CannonRotator instance { get; private set; }
+
+    private void Awake()
+    {
+        instance = this;
+    }
+
+    private void Start()
+    {
+        //bulletEndPosition = enemy.transform.position + (bulletDestinationOffset * enemy.transform.forward);
+    }
     private void Update()
     {
         AimCannon();
@@ -23,25 +37,26 @@ public class CannonRotator : MonoBehaviour
 
         CalculateAngleToHitTarget(out highAngle, out lowAngle);
 
-        if (highAngle != null)
-        {
-            float angle = (float)highAngle;
+        transform.LookAt(enemy);
+        transform.eulerAngles = new Vector3(0f, transform.rotation.eulerAngles.y, 0f);
 
-            print("high " + angle);
-            //Rotate the barrel
-            //The equation we use assumes that if we are rotating the gun up from the
-            //pointing "forward" position, the angle increase from 0, but our gun's angles
-            //decreases from 360 degress when we are rotating up
-            rotatingPart.localEulerAngles = new Vector3(360f - angle, 0f, 0f);
-            transform.LookAt(enemy);
-            transform.eulerAngles = new Vector3(0f, transform.rotation.eulerAngles.y, 0f);
+        if (lowAngle != null)
+        {
+            angle = (float)lowAngle;
+
+            print("low " + angle);
+
+            rotatingPart.localEulerAngles = new Vector3(360f - (float)angle, 0f, 0f);
         }
+
+
+        if (highAngle == null && lowAngle == null) angle = null;
     }
 
     void CalculateAngleToHitTarget(out float? theta1, out float? theta2)
     {
         //Initial speed
-        float v = 15;
+        
                
         //Vertical distance
         float y = targetVec.y;

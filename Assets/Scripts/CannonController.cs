@@ -66,7 +66,7 @@ public class CannonController : MonoBehaviour
         ////spawn the bullet at the cannon nozzle and orient it according to the firing angle
         Bullet spawnedBullet = Instantiate(bulletPrefab, firingStartPosition.position, firingCannon.transform.rotation);
 
-        spawnedBullet.InitBulletForShooting(speed_o, theta_o,  grounded_firingStartPosition.position,bulletEndPosition);
+        //spawnedBullet.InitBulletForShooting(speed_o, theta_o,  grounded_firingStartPosition.position,bulletEndPosition);
     }
 
     #region Strategy
