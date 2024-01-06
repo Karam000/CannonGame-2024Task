@@ -23,8 +23,8 @@ public class Bullet : MonoBehaviour
     {
         //transform.forward = (target-groundPosition).normalized;
         Target = target;
-        movementDirection = transform.forward;
-        velocityVector = transform.forward;
+        movementDirection = (target-this.transform.position).normalized;
+        velocityVector = (target - this.transform.position).normalized;
         initialSpeed = speed;
         initialAngle = thetao_rad;
         startTime = Time.time;

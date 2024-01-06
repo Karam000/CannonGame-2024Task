@@ -7,7 +7,7 @@ public class BulletMaker : MonoBehaviour
     [SerializeField] Bullet bulletPrefab;
 
     Transform firingPos;
-    Transform target;
+    Vector3 target;
 
     float speed;
     float firingAngle;
@@ -16,7 +16,6 @@ public class BulletMaker : MonoBehaviour
     {
         firingPos = CannonRotator.instance.firingPosition;
         speed = CannonRotator.instance.v;
-        target = CannonRotator.instance.enemy;
         InvokeRepeating("Fire",2,5);
     }
 
@@ -24,10 +23,12 @@ public class BulletMaker : MonoBehaviour
     {
         if (CannonRotator.instance.angle == null) return;
 
+        target = CannonRotator.instance.bulletEndPosition;
+
         Bullet spawnedBullet = Instantiate(bulletPrefab,firingPos.position,this.transform.rotation);
 
         firingAngle = (float)CannonRotator.instance.angle * Mathf.Deg2Rad;
 
-        spawnedBullet.InitBulletForShooting(speed, firingAngle,target.position);
+        spawnedBullet.InitBulletForShooting(speed, firingAngle,target);
     }
 }

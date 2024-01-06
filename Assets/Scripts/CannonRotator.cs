@@ -5,13 +5,14 @@ using UnityEngine;
 public class CannonRotator : MonoBehaviour
 {
     [SerializeField] Transform rotatingPart;
-    [SerializeField] public Transform enemy;
-    [SerializeField] float bulletDestinationOffset;
+    [SerializeField] public AIMovement enemy;
     [SerializeField] public Transform firingPosition;
     public float v = 15;
 
     [HideInInspector] public float? angle;
 
+    float flightTime;
+    [HideInInspector] public Vector3 bulletEndPosition;
     public static CannonRotator instance { get; private set; }
 
     private void Awake()
@@ -19,10 +20,7 @@ public class CannonRotator : MonoBehaviour
         instance = this;
     }
 
-    private void Start()
-    {
-        //bulletEndPosition = enemy.transform.position + (bulletDestinationOffset * enemy.transform.forward);
-    }
+   
     private void Update()
     {
         AimCannon();
@@ -33,11 +31,11 @@ public class CannonRotator : MonoBehaviour
         float? highAngle = 0f;
         float? lowAngle = 0f;
 
-        targetVec = enemy.position - firingPosition.position;
+        targetVec = enemy.transform.position - firingPosition.position;
 
         CalculateAngleToHitTarget(out highAngle, out lowAngle);
 
-        transform.LookAt(enemy);
+        transform.LookAt(enemy.transform);
         transform.eulerAngles = new Vector3(0f, transform.rotation.eulerAngles.y, 0f);
 
         if (lowAngle != null)
@@ -47,6 +45,13 @@ public class CannonRotator : MonoBehaviour
             print("low " + angle);
 
             rotatingPart.localEulerAngles = new Vector3(360f - (float)angle, 0f, 0f);
+
+            flightTime = targetVec.magnitude / (v * Mathf.Cos((float)angle * Mathf.Deg2Rad));
+
+            bulletEndPosition = enemy.transform.position + (enemy.currentVelocity.magnitude * flightTime) * enemy.transform.forward;
+
+            transform.LookAt(bulletEndPosition);
+            transform.eulerAngles = new Vector3(0f, transform.rotation.eulerAngles.y, 0f);
         }
 
 
