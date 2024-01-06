@@ -9,7 +9,8 @@ public class CannonController : MonoBehaviour
     [SerializeField] Transform firingStartPosition;
     [SerializeField] Transform grounded_firingStartPosition; //to make a unified vertical plane for firing position and bullet destination 
     [SerializeField] Bullet bulletPrefab;
-
+    /*[SerializeField]*/
+    // = 10;
     [SerializeField] float bulletDestinationOffset = 2;
 
     // this should fall on the line drawn to represent currentVelocity (enemy's path)
@@ -19,15 +20,23 @@ public class CannonController : MonoBehaviour
     //this represents the time the enemy takes to reach bulletEndPosition (enemy moves with constant/uniform velocity so it's a simple t = d/v)
     float enemyReachTime;
 
+    //public float enemyReachTime
+    //{
+    //    get
+    //    {
+    //        return _enemyReachTime * 4;
+    //    }
+    //}
 
     //this represents the distance between the firing position bulletEndPosition (they have to be on the same vertical plane for our calcs to be correct)
     float bulletRange;
 
     void Start()
     {
-        SetEnemyReachTime();
 
-        InvokeRepeating("Fire",0,5);
+
+        InvokeRepeating("Fire",2,5);
+        //Invoke("Fire", 3);
     }
 
     void Update()
@@ -56,16 +65,17 @@ public class CannonController : MonoBehaviour
     private void Fire()
     {
         SetBulletDestination();
+        SetEnemyReachTime();
         CalculateBulletRange();
-        CalculateInitialFiringAngle();
-        CalculateInitialFiringSpeed();
+        //CalculateInitialFiringAngle();
+        //CalculateInitialFiringSpeed();
 
-        firingCannon.Rotate(firingCannon.right, cannonFiringAngle_deg);
+        //firingCannon.rotation = Quaternion.eu
 
         //spawn the bullet at the cannon nozzle and orient it according to the firing angle
         Bullet spawnedBullet = Instantiate(bulletPrefab, firingStartPosition.position, firingCannon.transform.rotation);
 
-        spawnedBullet.InitBulletForShooting(speed_o,theta_o); ;
+        spawnedBullet.InitBulletForShooting(speed_o, theta_o,  grounded_firingStartPosition.position,bulletEndPosition);
     }
 
 
@@ -89,35 +99,36 @@ public class CannonController : MonoBehaviour
     // Hence, we have two unknowns in two equations: Vo and THETAo
     // solving these equations simultaneously gives us:
     //
-    // THETAo = cosInverse(2*R/g^2*T^2)
-    // Vo = g*T/(2 sin(cosInverse(2*R/g^2*T^2))) >> g * T / (2 * sin(THETAo))
+    // THETAo = cotInverse(2*R/g^2*T^2)
+    // Vo = g*T/(2 sin(cotInverse(2*R/g^2*T^2))) >> g * T / (2 * sin(THETAo))
     //
     // we can then use these two values to determine the position of the bullet each frame using the two projectile position equations below:
     // [where t is the respective current point in time of this (x,y) calculation]
     // x = Vo * cos(THETAo) * t 
     // y = Vo sin(THETAo)*t - (0.5 * g * t^2) 
 
-
-    float theta_o;
-    float speed_o;
+    float theta_o = 45*Mathf.Deg2Rad;
+    [SerializeField] float speed_o = 30;
 
     float cannonFiringAngle_deg;
-
     private void CalculateBulletRange()
     {
         bulletRange = (bulletEndPosition - grounded_firingStartPosition.position).magnitude;
     }
-    private void CalculateInitialFiringAngle()
-    {
-        theta_o = Mathf.Acos(2 * bulletRange / Mathf.Pow(9.8f * enemyReachTime, 2));
+    //private void CalculateInitialFiringAngle()
+    //{
+    //    float gr = bulletRange * 9.8f;
+    //    float beforeSin = gr / (speed_o * speed_o);
+    //    print(beforeSin);
+    //    theta_o = Mathf.Asin(beforeSin)/2;
+    //    cannonFiringAngle_deg = Mathf.Rad2Deg * theta_o;
+    //    print(cannonFiringAngle_deg);
+    //}
 
-        cannonFiringAngle_deg = Mathf.Rad2Deg * theta_o; //convert to degrees for the Transform.Rotate fucntion
-    }
-
-    private void CalculateInitialFiringSpeed()
-    {
-        speed_o = 9.8f * enemyReachTime / (2 * Mathf.Sin(theta_o));
-    }
+    //private void CalculateInitialFiringSpeed()
+    //{
+    //    speed_o = (bulletRange + (9.8f * 0.5f * enemyReachTime * enemyReachTime)) / (Mathf.Sin(theta_o)*enemyReachTime);
+    //}
 
     private void OnDrawGizmos()
     {
