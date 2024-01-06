@@ -9,9 +9,9 @@ public class CannonController : MonoBehaviour
     [SerializeField] Transform firingStartPosition;
     [SerializeField] Transform grounded_firingStartPosition; //to make a unified vertical plane for firing position and bullet destination 
     [SerializeField] Bullet bulletPrefab;
-    /*[SerializeField]*/
-    // = 10;
+    [SerializeField] float maxHeight = 5;
     [SerializeField] float bulletDestinationOffset = 2;
+    [SerializeField] float grav = 9.8f;
 
     // this should fall on the line drawn to represent currentVelocity (enemy's path)
     Vector3 bulletEndPosition;
@@ -20,27 +20,19 @@ public class CannonController : MonoBehaviour
     //this represents the time the enemy takes to reach bulletEndPosition (enemy moves with constant/uniform velocity so it's a simple t = d/v)
     float enemyReachTime;
 
-    //public float enemyReachTime
-    //{
-    //    get
-    //    {
-    //        return _enemyReachTime * 4;
-    //    }
-    //}
-
+   
     //this represents the distance between the firing position bulletEndPosition (they have to be on the same vertical plane for our calcs to be correct)
     float bulletRange;
 
     void Start()
     {
-
-
-        InvokeRepeating("Fire",2,5);
+        //InvokeRepeating("Fire",2,5);
         //Invoke("Fire", 3);
     }
 
     void Update()
     {
+        
         //just to visualize the enemy path and currentVelocity
         Debug.DrawLine(enemy.transform.position + Vector3.up * 0.5f, (enemy.transform.position + enemy.currentVelocity) + Vector3.up * 0.5f/* * 5*/);
     }
@@ -67,17 +59,17 @@ public class CannonController : MonoBehaviour
         SetBulletDestination();
         SetEnemyReachTime();
         CalculateBulletRange();
-        //CalculateInitialFiringAngle();
         //CalculateInitialFiringSpeed();
+        CalculateInitialFiringAngle();
 
-        //firingCannon.rotation = Quaternion.eu
 
-        //spawn the bullet at the cannon nozzle and orient it according to the firing angle
+        ////spawn the bullet at the cannon nozzle and orient it according to the firing angle
         Bullet spawnedBullet = Instantiate(bulletPrefab, firingStartPosition.position, firingCannon.transform.rotation);
 
         spawnedBullet.InitBulletForShooting(speed_o, theta_o,  grounded_firingStartPosition.position,bulletEndPosition);
     }
 
+    #region Strategy
 
     //the set of methods used below are used to calculate the parameters to determine the bullet movement to reach the goal bulletEndPosition
     //we will be using projectile movement equations
@@ -107,28 +99,88 @@ public class CannonController : MonoBehaviour
     // x = Vo * cos(THETAo) * t 
     // y = Vo sin(THETAo)*t - (0.5 * g * t^2) 
 
-    float theta_o = 45*Mathf.Deg2Rad;
-    [SerializeField] float speed_o = 30;
+    #endregion
+
+
+    float theta_o;
+    float speed_o = 20;
 
     float cannonFiringAngle_deg;
     private void CalculateBulletRange()
     {
         bulletRange = (bulletEndPosition - grounded_firingStartPosition.position).magnitude;
     }
-    //private void CalculateInitialFiringAngle()
-    //{
-    //    float gr = bulletRange * 9.8f;
-    //    float beforeSin = gr / (speed_o * speed_o);
-    //    print(beforeSin);
-    //    theta_o = Mathf.Asin(beforeSin)/2;
-    //    cannonFiringAngle_deg = Mathf.Rad2Deg * theta_o;
-    //    print(cannonFiringAngle_deg);
-    //}
+    private void CalculateInitialFiringAngle()
+    {
+        float? highAngle;
+        float? lowAngle;
+
+        CalculateAngleToHitTarget(out highAngle,out lowAngle);
+
+        if (bulletRange >= 7)
+        {
+            theta_o = (float)highAngle;
+        }
+        else
+        {
+            theta_o = (float)lowAngle;
+        }
+    }
 
     //private void CalculateInitialFiringSpeed()
     //{
-    //    speed_o = (bulletRange + (9.8f * 0.5f * enemyReachTime * enemyReachTime)) / (Mathf.Sin(theta_o)*enemyReachTime);
+    //    float Vox = bulletRange / enemyReachTime;
+    //    float Voy = (maxHeight/enemyReachTime) + (0.5f * grav * enemyReachTime);
+
+    //    speed_o = Mathf.Sqrt((Vox*Vox) + (Voy*Voy));
+    //    print(speed_o);
     //}
+
+    void CalculateAngleToHitTarget(out float? theta1, out float? theta2)
+    {
+        //Initial speed
+        float v = speed_o;
+
+        Vector3 targetVec = bulletEndPosition - this.transform.position;
+
+        //Vertical distance
+        float y = targetVec.y;
+
+        //Reset y so we can get the horizontal distance x
+        targetVec.y = 0f;
+
+        //Horizontal distance
+        float x = targetVec.magnitude;
+
+        //Gravity
+        float g = 9.81f;
+
+
+        //Calculate the angles
+
+        float vSqr = v * v;
+
+        float underTheRoot = (vSqr * vSqr) - g * (g * x * x + 2 * y * vSqr);
+
+        //Check if we are within range
+        if (underTheRoot >= 0f)
+        {
+            float rightSide = Mathf.Sqrt(underTheRoot);
+
+            float top1 = vSqr + rightSide;
+            float top2 = vSqr - rightSide;
+
+            float bottom = g * x;
+
+            theta1 = Mathf.Atan2(top1, bottom) * Mathf.Rad2Deg;
+            theta2 = Mathf.Atan2(top2, bottom) * Mathf.Rad2Deg;
+        }
+        else
+        {
+            theta1 = null;
+            theta2 = null;
+        }
+    }
 
     private void OnDrawGizmos()
     {

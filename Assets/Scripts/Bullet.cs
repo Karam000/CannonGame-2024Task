@@ -17,6 +17,8 @@ public class Bullet : MonoBehaviour
     float incidentTime;
 
     float initialVerticalOffset;
+
+    bool allSet = false;
     public void InitBulletForShooting(float speed, float thetao_rad,Vector3 groundPosition,Vector3 target)
     {
         transform.forward = (target-groundPosition).normalized;
@@ -27,6 +29,7 @@ public class Bullet : MonoBehaviour
         destination = target;
         initialVerticalOffset = (this.transform.position - groundPosition).y;
         startTime = Time.time;
+        allSet = true;
     }
 
     //x = Vo* cos(THETAo) * t
@@ -35,6 +38,8 @@ public class Bullet : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (!allSet) return;
+
         incidentTime = Time.time - startTime;
 
         movementVector.z = initialSpeed * Mathf.Cos(initialAngle) * (incidentTime);
