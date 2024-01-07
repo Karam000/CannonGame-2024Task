@@ -18,6 +18,7 @@ public class Bullet : MonoBehaviour
     Vector3 Target;
 
     bool canFly;
+
     public void InitBulletForShooting(float speed, float thetao_rad,Vector3 target)
     {
         Target = target;
@@ -65,6 +66,7 @@ public class Bullet : MonoBehaviour
         {
             print("successful hit !!!");
             canFly = false;
+            LevelManager.Instance.enemyHitEvent.Invoke();
             Destroy(this.gameObject); //only destroy for now, effects later
         }
     }

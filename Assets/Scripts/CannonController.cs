@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -38,8 +39,9 @@ public class CannonController : MonoBehaviour
     }
     private void Start()
     {
+        LevelManager.Instance.canFireEvent.AddListener(Fire);
+        
         startingRecoilTransform = this.transform.position;
-        InvokeRepeating("Fire", 2, 5);
     }
     private void Update()
     {
