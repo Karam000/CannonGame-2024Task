@@ -55,20 +55,16 @@ public class Bullet : MonoBehaviour
     private void OnTriggerEnter(Collider other) 
     {
         //using a class for tags to avoid misspelling
-
         if(other.CompareTag(MyTags.GroundTag))
         {
             print("destroyed");
             canFly = false;
-            
             Destroy(this.gameObject); //only destroy for now, effects later
         }
         if (other.CompareTag(MyTags.EnemyTag))
         {
-            canFly = false;
-           
             print("successful hit !!!");
-
+            canFly = false;
             Destroy(this.gameObject); //only destroy for now, effects later
         }
     }

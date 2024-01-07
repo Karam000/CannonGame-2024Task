@@ -1253,7 +1253,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rotatingPart: {fileID: 1204483068}
   firingPosition: {fileID: 938244456}
-  initialBulletVelocity: 30
+  initialBulletVelocity: 25
   bulletPrefab: {fileID: 3182266390621258159, guid: 16826fee665980d43bdb38c3a18ff98d, type: 3}
   enemy: {fileID: 1129759342}
   recoilDistance: 1.7
