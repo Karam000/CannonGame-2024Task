@@ -1,147 +1,95 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 public class CannonController : MonoBehaviour
 {
-    [SerializeField] AIMovement enemy;
-    [SerializeField] Transform firingCannon;
-    [SerializeField] Transform firingStartPosition;
-    [SerializeField] Transform grounded_firingStartPosition; //to make a unified vertical plane for firing position and bullet destination 
+
+    [Header("Cannon parts")]
+    [SerializeField] Transform rotatingPart;
+    [SerializeField] public Transform firingPosition;
+
+    [Header("Projectile")]
+    [SerializeField] float initialBulletVelocity = 15;
     [SerializeField] Bullet bulletPrefab;
-    [SerializeField] float maxHeight = 5;
-    [SerializeField] float bulletDestinationOffset = 2;
-    [SerializeField] float grav = 9.8f;
 
-    // this should fall on the line drawn to represent currentVelocity (enemy's path)
-    Vector3 bulletEndPosition;
+    [Header("Enemy")]
+    [SerializeField] public AIMovement enemy;
 
+    [Header("Recoil presets")]
+    [SerializeField] float recoilDistance;
+    [SerializeField] float recoilSpeed;
 
-    //this represents the time the enemy takes to reach bulletEndPosition (enemy moves with constant/uniform velocity so it's a simple t = d/v)
-    float enemyReachTime;
+    [HideInInspector] public Vector3 bulletEndPosition;
+    [HideInInspector] public float? angle;
+    [HideInInspector] public bool canRecoil;
 
-   
-    //this represents the distance between the firing position bulletEndPosition (they have to be on the same vertical plane for our calcs to be correct)
-    float bulletRange;
+    Vector3 targetVec;
+    Vector3 startingRecoilTransform;
+    float flightTime;
+    bool canRevertRecoil;
 
-    void Start()
+    public static CannonController Instance { get; private set; }
+
+    private void Awake()
     {
-        //InvokeRepeating("Fire",2,5);
-        //Invoke("Fire", 3);
+        Instance = this;
+    }
+    private void Start()
+    {
+        startingRecoilTransform = this.transform.position;
+        InvokeRepeating("Fire", 2, 5);
+    }
+    private void Update()
+    {
+        AimCannon();
     }
 
-    void Update()
+    private void FixedUpdate()
     {
-        
-        //just to visualize the enemy path and currentVelocity
-        Debug.DrawLine(enemy.transform.position + Vector3.up * 0.5f, (enemy.transform.position + enemy.currentVelocity) + Vector3.up * 0.5f/* * 5*/);
+        if (canRecoil)
+            Recoil();
+
+        else if (canRevertRecoil) RevertRecoil();
     }
 
-    private void SetBulletDestination()
+    #region Aim 
+    private void AimCannon()
     {
-        //an initial position to throw at, should adjust with other factors to achieve a nice game feel
-        bulletEndPosition = enemy.transform.position + enemy.transform.forward * bulletDestinationOffset;
+        float? highAngle = 0f;
+        float? lowAngle = 0f;
 
-        //aim at destination to shoot the bullet only on the horizontal axis (forward of the cannon)
-        //this needs to have some coordination between cart rotation and firing cannon rotation to achieve a nice game feel
-        //cart should rotate first then the firing cannon (IK animation ??)
-        //or just adjust the inital rotation of the firing cannon to align horizontally on the cart (right now it has a little offset angle)
-       this.transform.LookAt(bulletEndPosition);  
-    }
+        targetVec = enemy.transform.position - firingPosition.position;
 
-    private void SetEnemyReachTime()
-    {
-        enemyReachTime = bulletDestinationOffset / enemy.currentVelocity.magnitude;
-    }
+        CalculateAngleToHitTarget(out highAngle, out lowAngle);
 
-    private void Fire()
-    {
-        SetBulletDestination();
-        SetEnemyReachTime();
-        CalculateBulletRange();
-        //CalculateInitialFiringSpeed();
-        CalculateInitialFiringAngle();
+        transform.LookAt(enemy.transform);
+        transform.eulerAngles = new Vector3(0f, transform.rotation.eulerAngles.y, 0f); //to make it only look in y rotation
 
-
-        ////spawn the bullet at the cannon nozzle and orient it according to the firing angle
-        Bullet spawnedBullet = Instantiate(bulletPrefab, firingStartPosition.position, firingCannon.transform.rotation);
-
-        //spawnedBullet.InitBulletForShooting(speed_o, theta_o,  grounded_firingStartPosition.position,bulletEndPosition);
-    }
-
-    #region Strategy
-
-    //the set of methods used below are used to calculate the parameters to determine the bullet movement to reach the goal bulletEndPosition
-    //we will be using projectile movement equations
-    //I initially thought I'd use Newton's basic movement equations, but they take mass and air resistance into consideration, which isn't necessary in our case
-
-    //we will be using: 
-    //R = ((Vo)^2 * (sin 2*THETAo)) /g 
-    //T = 2(Vo * (sin THETAo)/g)
-
-    //where:
-    // R is the horizontal range between firingStartPosition (cannon nozzle) and the the projectile destination bulletEndPosition
-    // T is the total time for the bullet to reach bulletEndPosition
-    // Vo is the initial velocity of the bullet at firingStartPosition
-    // THETAo is the initial orientation angle of the bullet on the horizontal axis, in radians of course
-    // g is the gravity downwards acceleration
-    //
-    // It's noteable that we have three unknowns in these two equations, so we will need to have an assumption to be able to solve them simultaneously: 
-    // we assume T is equal to enemyReachTime (the time the enemy takes to reach bulletEndPosition)
-    // Hence, we have two unknowns in two equations: Vo and THETAo
-    // solving these equations simultaneously gives us:
-    //
-    // THETAo = cotInverse(2*R/g^2*T^2)
-    // Vo = g*T/(2 sin(cotInverse(2*R/g^2*T^2))) >> g * T / (2 * sin(THETAo))
-    //
-    // we can then use these two values to determine the position of the bullet each frame using the two projectile position equations below:
-    // [where t is the respective current point in time of this (x,y) calculation]
-    // x = Vo * cos(THETAo) * t 
-    // y = Vo sin(THETAo)*t - (0.5 * g * t^2) 
-
-    #endregion
-
-
-    float theta_o;
-    float speed_o = 20;
-
-    float cannonFiringAngle_deg;
-    private void CalculateBulletRange()
-    {
-        bulletRange = (bulletEndPosition - grounded_firingStartPosition.position).magnitude;
-    }
-    private void CalculateInitialFiringAngle()
-    {
-        float? highAngle;
-        float? lowAngle;
-
-        CalculateAngleToHitTarget(out highAngle,out lowAngle);
-
-        if (bulletRange >= 7)
+        if (lowAngle != null) //by experimenting it's way better to use the shallow curve with high speeds (25+)
         {
-            theta_o = (float)highAngle;
+            angle = (float)lowAngle;
+
+            rotatingPart.localEulerAngles = new Vector3(360f - (float)angle, 0f, 0f); //because it rotates negatively in the scene (-ve = up)
+
+            //This region has an approximation as we don't adjust the angle after setting the target to bulletEndPosition instead of enemy
+            flightTime = targetVec.magnitude / (initialBulletVelocity * Mathf.Cos((float)angle * Mathf.Deg2Rad));
+
+            bulletEndPosition = enemy.transform.position + (enemy.currentVelocity.magnitude * flightTime) * enemy.transform.forward;
+
+            transform.LookAt(bulletEndPosition);
+            transform.eulerAngles = new Vector3(0f, transform.rotation.eulerAngles.y, 0f);
         }
-        else
-        {
-            theta_o = (float)lowAngle;
-        }
+
+
+        if (highAngle == null && lowAngle == null) angle = null;
     }
-
-    //private void CalculateInitialFiringSpeed()
-    //{
-    //    float Vox = bulletRange / enemyReachTime;
-    //    float Voy = (maxHeight/enemyReachTime) + (0.5f * grav * enemyReachTime);
-
-    //    speed_o = Mathf.Sqrt((Vox*Vox) + (Voy*Voy));
-    //    print(speed_o);
-    //}
-
     void CalculateAngleToHitTarget(out float? theta1, out float? theta2)
     {
-        //Initial speed
-        float v = speed_o;
 
-        Vector3 targetVec = bulletEndPosition - this.transform.position;
+        //lots of local variables are declared each frame, bad performance (too many garbage collection)
+
 
         //Vertical distance
         float y = targetVec.y;
@@ -155,10 +103,8 @@ public class CannonController : MonoBehaviour
         //Gravity
         float g = 9.81f;
 
-
         //Calculate the angles
-
-        float vSqr = v * v;
+        float vSqr = initialBulletVelocity * initialBulletVelocity;
 
         float underTheRoot = (vSqr * vSqr) - g * (g * x * x + 2 * y * vSqr);
 
@@ -180,12 +126,49 @@ public class CannonController : MonoBehaviour
             theta1 = null;
             theta2 = null;
         }
-    }
+    } 
+    #endregion
 
-    private void OnDrawGizmos()
+    private void Fire()
     {
-        Gizmos.color = Color.green;
+        if (angle == null) return;
 
-        Gizmos.DrawSphere(bulletEndPosition + Vector3.up * 0.5f, 0.5f);
+        Bullet spawnedBullet = Instantiate(bulletPrefab, firingPosition.position, this.transform.rotation);
+
+        spawnedBullet.InitBulletForShooting(initialBulletVelocity, (float)angle * Mathf.Deg2Rad, bulletEndPosition);
+
+        canRecoil = true;
     }
+
+    #region Recoil
+    private void Recoil()
+    {
+        float movedSpace = Vector3.Distance(this.transform.position, startingRecoilTransform);
+        print("RECOIL " + movedSpace);
+        if (movedSpace <= recoilDistance)
+        {
+            this.transform.position -= (this.transform.forward * recoilSpeed * Time.fixedDeltaTime);
+        }
+        else
+        {
+            canRecoil = false;
+            canRevertRecoil = true;
+        }
+    }
+    private void RevertRecoil()
+    {
+        float movedSpace = Vector3.Distance(this.transform.position, startingRecoilTransform);
+        print("revert " + movedSpace);
+
+        if (movedSpace > 0)
+        {
+            this.transform.position = Vector3.MoveTowards(this.transform.position, startingRecoilTransform, recoilSpeed * Time.fixedDeltaTime / 10);
+        }
+        else
+        {
+            canRevertRecoil = false;
+        }
+    } 
+    #endregion
+
 }

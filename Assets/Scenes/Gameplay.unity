@@ -1084,6 +1084,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bulletPrefab: {fileID: 3182266390621258159, guid: 16826fee665980d43bdb38c3a18ff98d, type: 3}
+  firingPos: {fileID: 0}
+  target: {x: 0, y: 0, z: 0}
+  speed: 0
+  firingAngle: 0
 --- !u!1 &1236426229
 GameObject:
   m_ObjectHideFlags: 0
@@ -1276,12 +1280,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rotatingPart: {fileID: 1204483068}
-  enemy: {fileID: 1129759342}
   firingPosition: {fileID: 938244456}
+  initialBulletVelocity: 5
+  bulletPrefab: {fileID: 3182266390621258159, guid: 16826fee665980d43bdb38c3a18ff98d, type: 3}
+  enemy: {fileID: 1129759342}
   recoilDistance: 1.7
   recoilSpeed: 15
-  startingRecoilTransform: {fileID: 134560862}
-  v: 30
   bulletEndPosition: {x: 0, y: 0, z: 0}
   canRecoil: 0
 --- !u!1 &1441454391
