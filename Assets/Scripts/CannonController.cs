@@ -152,7 +152,6 @@ public class CannonController : MonoBehaviour
     private void Recoil()
     {
         float movedSpace = Vector3.Distance(this.transform.position, startingRecoilTransform);
-        print("RECOIL " + movedSpace);
         if (movedSpace <= recoilDistance)
         {
             this.transform.position -= (this.transform.forward * recoilSpeed * Time.fixedDeltaTime);
@@ -166,7 +165,6 @@ public class CannonController : MonoBehaviour
     private void RevertRecoil()
     {
         float movedSpace = Vector3.Distance(this.transform.position, startingRecoilTransform);
-        print("revert " + movedSpace);
 
         if (movedSpace > 0)
         {
