@@ -13,6 +13,8 @@ public class UIManager : MonoBehaviour
 
     [SerializeField] GameObject resultPanel;
     public static UIManager Instance { get; private set; }
+
+    bool islevelEnd = false;
     private void Awake()
     {
         Instance = this;
@@ -29,6 +31,8 @@ public class UIManager : MonoBehaviour
     float elapsedTime;
     private void Update()
     {
+        if (islevelEnd) return;
+
         elapsedTime += Time.deltaTime;
         currentTimeTxt.text = ((int)elapsedTime).ToString();
     }
@@ -42,7 +46,7 @@ public class UIManager : MonoBehaviour
     {
         accuracyTxt.text = accuracy.ToString() + " %";
         hitAmount_resTxt.text = hitCount.ToString();
-
+        islevelEnd = true;  
         resultPanel.SetActive(true);
     }
 

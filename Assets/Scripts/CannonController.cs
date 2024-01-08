@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using static UnityEngine.GraphicsBuffer;
 
@@ -9,28 +10,30 @@ public class CannonController : MonoBehaviour
 
     [Header("Cannon parts")]
     [SerializeField] Transform rotatingPart;
-    [SerializeField] public Transform firingPosition;
+    [SerializeField] Transform firingPosition;
 
     [Header("Projectile")]
-    [SerializeField] float initialBulletVelocity = 15;
     [SerializeField] Bullet bulletPrefab;
 
     [Header("Enemy")]
-    [SerializeField] public AIMovement enemy;
+    [SerializeField] AIMovement enemy;
+    [SerializeField] float predictedTargetOffset;
 
     [Header("Recoil presets")]
     [SerializeField] float recoilDistance;
     [SerializeField] float recoilSpeed;
 
-    [HideInInspector] public Vector3 bulletEndPosition;
-    [HideInInspector] public float? angle_deg;
-    [HideInInspector] public bool canRecoil;
 
+    Vector3 PredictedbulletEndPosition;
     Vector3 targetVec;
     Vector3 startingRecoilTransform;
     float flightTime;
     bool canRevertRecoil;
+    bool canRecoil;
+
+    float angle_deg;
     float g = 9.81f;
+    float requiredInitialVelocity;
     public static CannonController Instance { get; private set; }
 
     private void Awake()
@@ -40,11 +43,13 @@ public class CannonController : MonoBehaviour
     private void Start()
     {
         LevelManager.Instance.canFireEvent.AddListener(Fire);
-        
         startingRecoilTransform = this.transform.position;
     }
     private void Update()
     {
+        flightTime = CalculateFlightTime();
+
+        CalculateBulletDestination();
         AimCannon();
     }
 
@@ -62,59 +67,53 @@ public class CannonController : MonoBehaviour
         float? highAngle = 0f;
         float? lowAngle = 0f;
 
-        targetVec = enemy.transform.position - firingPosition.position;
+        targetVec = PredictedbulletEndPosition - firingPosition.position;
 
-        CalculateAngleToHitTarget(out highAngle, out lowAngle); //this gives us two angles for two curves (shallow and steep) cuz it has a square root
+        requiredInitialVelocity = ((PredictedbulletEndPosition - firingPosition.position).magnitude - (0.5f * g * flightTime * flightTime)) / flightTime;
+        print(requiredInitialVelocity);
+        CalculateAngleToHitTarget(out highAngle, out lowAngle, requiredInitialVelocity); //this gives us two angles for two curves (shallow and steep) cuz it has a square root
 
-        transform.LookAt(enemy.transform);
+        transform.LookAt(PredictedbulletEndPosition);
         transform.eulerAngles = new Vector3(0f, transform.rotation.eulerAngles.y, 0f); //to make it only look in y rotation
 
-        if (lowAngle != null) //by experimenting it's way better to use the shallow curve with high speeds (25+)
+        if (lowAngle != null) //by experimenting it's way better to use the shallow curve
         {
             angle_deg = (float)lowAngle;
 
             rotatingPart.localEulerAngles = new Vector3(360f - (float)angle_deg, 0f, 0f); //because it rotates negatively in the scene (-ve = up)
-            
-            //The following region has an approximation as we don't adjust the angle after setting the target to bulletEndPosition instead of enemy
-            //I think there should be some kind of recursive operations that goes back and forth to determine the perfect target and firing angle
-            //(something like PID control where you get output feedback and adjust your input accordingly)
-
-            #region This should be the accurate flight time calculation but it's not giving good results
-            //float vsin = initialBulletVelocity * Mathf.Sin((float)angle_deg * Mathf.Deg2Rad);
-
-            //float sqrt = Mathf.Sqrt((vsin * vsin) + (2 * g * verticalDisplacment.y));
-
-            //float top = vsin + sqrt;
-
-            //flightTime = top / g; 
-            #endregion
-
-            flightTime = targetVec.magnitude / (initialBulletVelocity * Mathf.Cos((float)angle_deg * Mathf.Deg2Rad));
-
-            bulletEndPosition = enemy.transform.position + (enemy.currentVelocity.magnitude * flightTime) * enemy.transform.forward;
-
-            transform.LookAt(bulletEndPosition);
-            transform.eulerAngles = new Vector3(0f, transform.rotation.eulerAngles.y, 0f);
         }
 
-        if (highAngle == null && lowAngle == null) angle_deg = null;
+        if (highAngle == null && lowAngle == null)
+        {
+            print("no angle found");
+            angle_deg = 45; //set for max reach angle (it won't reach anyway)
+        }
     }
-    void CalculateAngleToHitTarget(out float? theta1, out float? theta2)
+
+    private float CalculateFlightTime()
+    {
+        return (predictedTargetOffset / enemy.currentVelocity.magnitude);
+    }
+
+    private void CalculateBulletDestination()
+    {
+        PredictedbulletEndPosition = enemy.transform.position + predictedTargetOffset * enemy.transform.forward;
+    }
+    
+    void CalculateAngleToHitTarget(out float? theta1, out float? theta2, float v)
     {
         //lots of local variables are declared each frame, bad performance (too many garbage collection)
-
 
         //Vertical distance
         float y = targetVec.y;
 
         //Reset y so we can get the horizontal distance x
         targetVec.y = 0f;
-
         //Horizontal distance
         float x = targetVec.magnitude;
 
         //Calculate the angles
-        float vSqr = initialBulletVelocity * initialBulletVelocity;
+        float vSqr = v * v;
 
         float underTheRoot = (vSqr * vSqr) - g * (g * x * x + 2 * y * vSqr);
 
@@ -141,11 +140,9 @@ public class CannonController : MonoBehaviour
 
     private void Fire()
     {
-        if (angle_deg == null) return;
-
         Bullet spawnedBullet = Instantiate(bulletPrefab, firingPosition.position, this.transform.rotation);
 
-        spawnedBullet.InitBulletForShooting(initialBulletVelocity, (float)angle_deg * Mathf.Deg2Rad, bulletEndPosition);
+        spawnedBullet.InitBulletForShooting(requiredInitialVelocity, (float)angle_deg * Mathf.Deg2Rad, PredictedbulletEndPosition);
 
         canRecoil = true;
     }
@@ -176,7 +173,14 @@ public class CannonController : MonoBehaviour
         {
             canRevertRecoil = false;
         }
-    } 
+    }
     #endregion
 
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.white;
+        Gizmos.DrawLine(enemy.transform.position, enemy.transform.position + enemy.transform.forward * 10);
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawSphere(PredictedbulletEndPosition, 0.5f);
+    }
 }
