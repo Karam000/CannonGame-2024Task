@@ -20,13 +20,12 @@ public class CannonController : MonoBehaviour
     [SerializeField] float recoilDistance;
     [SerializeField] float recoilSpeed;
 
-
     //variables
     #region Cannon firing calculations
-    Vector3 PredictedbulletEndPosition;
+    Vector3 PredictedbulletDestination;
     Vector3 targetVec;
     float flightTime;
-    float angle_deg;
+    float firingAngle_deg;
     float requiredInitialVelocity;
     float g = 9.81f;
     #endregion
@@ -34,6 +33,7 @@ public class CannonController : MonoBehaviour
 
     #region Recoil
     Vector3 startingRecoilTransform;
+    float recoilDisplacement;
     bool canRevertRecoil;
     bool canRecoil; 
     #endregion
@@ -63,10 +63,11 @@ public class CannonController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (canRecoil)
+        if (canRecoil) 
             Recoil();
 
-        else if (canRevertRecoil) RevertRecoil();
+        else if (canRevertRecoil) 
+            RevertRecoil();
     }
 
 
@@ -74,25 +75,58 @@ public class CannonController : MonoBehaviour
     #region Aim 
     private void SetBulletDestination()
     {
-        PredictedbulletEndPosition = enemy.transform.position + predictedTargetOffset * enemy.transform.forward;
+        //destination = enemy postion + offset in the direction of enemy's movement
+        PredictedbulletDestination = enemy.transform.position + predictedTargetOffset * enemy.transform.forward;
     }
     private void CalculateFlightTime()
     {
+        //t = d/v (constant speed formula) 
+
+        //>> this is the same for both the bullet reach and enemy reach time to the same point starting at the same time
+        //>> this assumption solves us the whole problem :)
+
+        //>> predictedTargetOffset can be adjusted to achieve better game feel (better flightTime translates to better/more realistic game feel)
+
         flightTime = (predictedTargetOffset / enemy.currentVelocity.magnitude);
     }
     private void CalculateRequiredInitialVelocity()
     {
+        //using kinematic equation (displacement equation):
+        //d = (Vo * t) + (0.5 * a * t^2)
+
+        //where:
+
+        //d: displacement to target, in our case the distance between firingPosition & PredictedbulletDestination (magnitude of the vector between them)
+        //Vo: the required initial velocity for an object to travel a distance "d" in time "t"
+        //t: time for the object to reach "object positon + d" starting at "Vo" speed
+        //a: the working acceleration, in our case it's only gravitional force "g"
+
+        //solving for "Vo" we get: Vo = (d - 0.5 * a * t^2) / t
+
         requiredInitialVelocity = (targetVec.magnitude - (0.5f * g * flightTime * flightTime)) / flightTime;
     }
     void CalculateAngleToHitTarget(out float? theta1, out float? theta2, float v,Vector3 targetVector)
     {
+        //There are two angles because tan(_angle) at any point on a curve represents the slope of the vector tangent to the curve at this point where _angle is 
+        //the angle between the horizontal axis and the tangent vector at this point
+        //the slope of the curve is derivative of the curve
+        //for the projectile motion curve equation: y = tan(theta_o) * x - g*x^2/2*(Vo * cos(theta_o))^2 
+        //it's clear that there are two values for theta_o that solve: y' = tan(theta_o) = derivative of this curve [because it'a a quadratic equation in theta_o]
+
+        //this might not be fully correct but that's what I could deduce :)
+
+        //there might be another reason related to trignometry/analytical approaches
+        //stuff like tan 30 = tan (30 +180) ... etc. But I couldn't come up with a relation this way
+
+
         //lots of local variables are declared each frame, bad performance (too many garbage collection)
 
-        //Vertical distance
+        //Vertical distance occuring due to the offset between firingPosition and the enemy's vertical position
         float y = targetVector.y;
 
         //Reset y so we can get the horizontal distance x
         targetVector.y = 0f;
+
         //Horizontal distance
         float x = targetVector.magnitude;
 
@@ -100,9 +134,8 @@ public class CannonController : MonoBehaviour
         float vSqr = v * v;
 
         float underTheRoot = (vSqr * vSqr) - g * (g * x * x + 2 * y * vSqr);
-
-        //Check if we are within range
-        if (underTheRoot >= 0f)
+       
+        if (underTheRoot >= 0f)  //Check if we are within range (negative underTheRoot means that this speed won't get us to target point no matter what)
         {
             float rightSide = Mathf.Sqrt(underTheRoot);
 
@@ -111,8 +144,8 @@ public class CannonController : MonoBehaviour
 
             float bottom = g * x;
 
-            theta1 = Mathf.Atan2(top1, bottom) * Mathf.Rad2Deg;
-            theta2 = Mathf.Atan2(top2, bottom) * Mathf.Rad2Deg;
+            theta1 = Mathf.Atan2(top1, bottom) * Mathf.Rad2Deg; //convert to degree for Transform.localEulerAngles rotation
+            theta2 = Mathf.Atan2(top2, bottom) * Mathf.Rad2Deg; //convert to degree for Transform.localEulerAngles rotation
         }
         else
         {
@@ -125,30 +158,29 @@ public class CannonController : MonoBehaviour
         float? highAngle = 0f;
         float? lowAngle = 0f;
 
-        targetVec = PredictedbulletEndPosition - firingPosition.position;
-        print(flightTime);
+        targetVec = PredictedbulletDestination - firingPosition.position; //projectile movement range (horizontal displacement)
 
         if (flightTime <= 0 || flightTime >= Mathf.Infinity) //happens if AIMovement hadn't determinded currentVelocity yet (only first shot)
             CalculateFlightTime();
 
         CalculateRequiredInitialVelocity();
 
-        CalculateAngleToHitTarget(out highAngle, out lowAngle, requiredInitialVelocity,targetVec); //this gives us two angles for two curves (shallow and steep) cuz it has a square root
+        CalculateAngleToHitTarget(out highAngle, out lowAngle, requiredInitialVelocity,targetVec); //this gives us two angles for two curves (shallow and steep)
 
-        transform.LookAt(PredictedbulletEndPosition);
+        transform.LookAt(PredictedbulletDestination);
         transform.eulerAngles = new Vector3(0f, transform.rotation.eulerAngles.y, 0f); //to make it only look in y rotation
 
         if (lowAngle != null) //by experimenting it's way better to use the shallow curve
         {
-            angle_deg = (float)lowAngle;
+            firingAngle_deg = (float)lowAngle;
 
-            rotatingPart.localEulerAngles = new Vector3(360f - (float)angle_deg, 0f, 0f); //because it rotates negatively in the scene (-ve = up)
+            rotatingPart.localEulerAngles = new Vector3(360f - (float)firingAngle_deg, 0f, 0f); //because it rotates negatively in the scene (-ve = up)
         }
 
         if (highAngle == null && lowAngle == null)
         {
             print("no angle found");
-            angle_deg = 45; //set for max reach angle (it won't reach anyway)
+            firingAngle_deg = 45; //set for max reach angle (it won't reach anyway)
         }
     }
     #endregion
@@ -156,21 +188,23 @@ public class CannonController : MonoBehaviour
     #region Fire
     private void Fire()
     {
+        //no need to have a pooling system for bullets spawning as it has a very slow rate
         Bullet spawnedBullet = Instantiate(bulletPrefab, firingPosition.position, this.transform.rotation);
 
-        spawnedBullet.InitBulletForShooting(requiredInitialVelocity, (float)angle_deg * Mathf.Deg2Rad, PredictedbulletEndPosition);
+        spawnedBullet.InitBulletForShooting(requiredInitialVelocity, (float)firingAngle_deg * Mathf.Deg2Rad, PredictedbulletDestination);
 
-        canRecoil = true;
+        canRecoil = true; //set it after shooting to avoid affecting firingPosition used in our previous calculations
     } 
     #endregion
 
     #region Recoil
     private void Recoil()
     {
-        float movedSpace = Vector3.Distance(this.transform.position, startingRecoilTransform);
-        if (movedSpace <= recoilDistance)
+        recoilDisplacement = Vector3.Distance(this.transform.position, startingRecoilTransform);
+
+        if (recoilDisplacement <= recoilDistance) //try to reach a suitable backward position
         {
-            this.transform.position -= (this.transform.forward * recoilSpeed * Time.fixedDeltaTime);
+            this.transform.position -= (this.transform.forward * recoilSpeed * Time.fixedDeltaTime); //move backwards at high speed (recoilSpeed)
         }
         else
         {
@@ -180,10 +214,11 @@ public class CannonController : MonoBehaviour
     }
     private void RevertRecoil()
     {
-        float movedSpace = Vector3.Distance(this.transform.position, startingRecoilTransform);
+        recoilDisplacement = Vector3.Distance(this.transform.position, startingRecoilTransform);
 
-        if (movedSpace > 0)
+        if (recoilDisplacement > 0) //keep moving until the cannon reaches its original position
         {
+            //move forward at low speed (one tenth of recoilSpeed)
             this.transform.position = Vector3.MoveTowards(this.transform.position, startingRecoilTransform, recoilSpeed * Time.fixedDeltaTime / 10);
         }
         else
@@ -218,7 +253,7 @@ public class CannonController : MonoBehaviour
 
         //Predicted bullet position visualization
         Gizmos.color = Color.yellow;
-        Gizmos.DrawSphere(PredictedbulletEndPosition, 0.5f);
+        Gizmos.DrawSphere(PredictedbulletDestination, 0.5f);
 
         //Enemy non-hit position visualization (mostly due to AIMovement randomness)
         Gizmos.color = Color.red;

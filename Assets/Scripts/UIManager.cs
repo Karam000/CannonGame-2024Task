@@ -26,8 +26,8 @@ public class UIManager : MonoBehaviour
         LevelManager.Instance.levelEndEvent.AddListener((accuracy,score)=>OnLevelEnd(accuracy, score));
     }
 
-    //not sure if it's the best way to calculate time here to print to currentTimeTxt
 
+    //not sure if it's the best way to calculate time here to print to currentTimeTxt
     float elapsedTime;
     private void Update()
     {

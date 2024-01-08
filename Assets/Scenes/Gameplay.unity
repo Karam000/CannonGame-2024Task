@@ -769,7 +769,7 @@ GameObject:
   - component: {fileID: 414934375}
   - component: {fileID: 414934376}
   m_Layer: 0
-  m_Name: Ground (1)
+  m_Name: bullet destruction collider
   m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2222,6 +2222,8 @@ MonoBehaviour:
   predictedTargetOffset: 4
   recoilDistance: 1.7
   recoilSpeed: 15
+  correctPositions: []
+  wrongPositions: []
 --- !u!1 &1412817055
 GameObject:
   m_ObjectHideFlags: 0

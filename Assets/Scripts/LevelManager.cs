@@ -5,15 +5,16 @@ using UnityEngine.Events;
 
 public class LevelManager : MonoBehaviour
 {
-    [SerializeField] float firingPeriod;
-    [SerializeField] float firingMaxCount;
+    [SerializeField] float firingPeriod; //periodic firing every 3 seconds
+    [SerializeField] float firingMaxCount; //number of required shots (10)
 
-    [HideInInspector] public UnityEvent canFireEvent;
+    [HideInInspector] public UnityEvent canFireEvent; //fires every 3 seconds
 
-    [HideInInspector] public UnityEvent<bool> bulletHitEvent;
+    [HideInInspector] public UnityEvent<bool> bulletHitEvent; //fires when the bullet hits the enemy (true) or the ground (false)
 
-    [HideInInspector] public UnityEvent<int> updateUIEvent;
-    [HideInInspector] public UnityEvent<float,int> levelEndEvent;
+    [HideInInspector] public UnityEvent<int> updateUIEvent; //fires only after updating our score
+
+    [HideInInspector] public UnityEvent<float,int> levelEndEvent; //fires when all required shots(10) have been fired
 
     Coroutine firingCoroutine;
 
@@ -30,6 +31,7 @@ public class LevelManager : MonoBehaviour
     private void Start()
     {
         bulletHitEvent.AddListener((isEnemy)=>OnBulletHitEvent(isEnemy));
+
         levelEndEvent.AddListener((accuracy, score)=>OnLevelEnd());
 
         firingCoroutine = StartCoroutine(FireCoroutine());
@@ -37,8 +39,11 @@ public class LevelManager : MonoBehaviour
    
     IEnumerator FireCoroutine()
     {
+        //probably not the best way to do a repeation coroutine ;D
         yield return new WaitForSeconds(firingPeriod);
+
         canFireEvent.Invoke();
+
         StopCoroutine(firingCoroutine);
         firingCoroutine = StartCoroutine(FireCoroutine());
     }
@@ -46,18 +51,20 @@ public class LevelManager : MonoBehaviour
     private void OnBulletHitEvent(bool isEnemy)
     {
         shotsCount++;
-        if (isEnemy)
+
+        if (isEnemy)//written first to update the score UI before ending the level in case of the last shot (shot number 10)
         {
             score++;
 
             //update UI here
             updateUIEvent.Invoke(score);
         }
+
         if (shotsCount >= firingMaxCount)
         {
             //level end here
 
-            CalcualteAccuracy();
+            CalculateAccuracy();
 
             levelEndEvent.Invoke(accuracy, score);
         }
@@ -67,7 +74,7 @@ public class LevelManager : MonoBehaviour
         StopAllCoroutines();
     }
 
-    private void CalcualteAccuracy()
+    private void CalculateAccuracy()
     {
         accuracy = (score / firingMaxCount) * 100;
     }
