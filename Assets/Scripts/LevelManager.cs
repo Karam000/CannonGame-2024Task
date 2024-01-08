@@ -5,8 +5,16 @@ using UnityEngine.Events;
 
 public class LevelManager : MonoBehaviour
 {
+    [Header("Level settings")]
     [SerializeField] float firingPeriod; //periodic firing every 3 seconds
     [SerializeField] float firingMaxCount; //number of required shots (10)
+
+    [Header("Sound effects")] //would be better to add a separate audio manager class
+    [SerializeField] AudioSource audioSource;
+    [SerializeField] AudioClip fireSfx;
+    [SerializeField] AudioClip hitEnemySfx;
+    [SerializeField] AudioClip hitGroundSfx;
+
 
     [HideInInspector] public UnityEvent canFireEvent; //fires every 3 seconds
 
@@ -43,6 +51,7 @@ public class LevelManager : MonoBehaviour
         yield return new WaitForSeconds(firingPeriod);
 
         canFireEvent.Invoke();
+        PlayFireSfx();
 
         StopCoroutine(firingCoroutine);
         firingCoroutine = StartCoroutine(FireCoroutine());
@@ -56,8 +65,13 @@ public class LevelManager : MonoBehaviour
         {
             score++;
 
+            PlayHitEnemySfx();
             //update UI here
             updateUIEvent.Invoke(score);
+        }
+        else
+        {
+            PlayHitGroundSfx();
         }
 
         if (shotsCount >= firingMaxCount)
@@ -73,9 +87,26 @@ public class LevelManager : MonoBehaviour
     {
         StopAllCoroutines();
     }
-
     private void CalculateAccuracy()
     {
         accuracy = (score / firingMaxCount) * 100;
     }
+
+    #region Sound effects
+    private void PlayFireSfx()
+    {
+        audioSource.clip = fireSfx;
+        audioSource.Play();
+    }
+    private void PlayHitEnemySfx()
+    {
+        audioSource.clip = hitEnemySfx;
+        audioSource.Play();
+    }
+    private void PlayHitGroundSfx()
+    {
+        audioSource.clip = hitGroundSfx;
+        audioSource.Play();
+    }
+    #endregion
 }

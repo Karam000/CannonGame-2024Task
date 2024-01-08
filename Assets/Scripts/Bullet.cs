@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 public class Bullet : MonoBehaviour
 {
+    [Header("Effects")]
+    [SerializeField] ParticleSystem BulletHitEnemyFx;
+    [SerializeField] ParticleSystem BulletHitGroundFx;
+
+
     float initialSpeed; //not velocity cuz scalar xD :D
     float initialAngle;
     float startTime;
@@ -19,6 +23,9 @@ public class Bullet : MonoBehaviour
 
     bool canFly;
 
+    private void Start()
+    {
+    }
     public void InitBulletForShooting(float speed, float thetao_rad,Vector3 target)
     {
         Target = target;
@@ -65,10 +72,11 @@ public class Bullet : MonoBehaviour
 
             CannonController.Instance.AddWrongPosition(Target);
 
-
             LevelManager.Instance.bulletHitEvent.Invoke(/*isEnemy:*/ false);
 
-            Destroy(this.gameObject); //only destroy for now, effects later
+            PlayParticleInPosition(Target, BulletHitGroundFx);
+
+            Destroy(this.gameObject,1); //only destroy for now, effects later
         }
 
         if (other.CompareTag(MyTags.EnemyTag))  //using a class for tags to avoid misspelling
@@ -78,10 +86,21 @@ public class Bullet : MonoBehaviour
 
             CannonController.Instance.AddCorrectPosition(Target);
 
+            PlayParticleInPosition(Target, BulletHitEnemyFx);
+
             LevelManager.Instance.bulletHitEvent.Invoke(/*isEnemy:*/ true);
 
-            Destroy(this.gameObject); //only destroy for now, effects later
+            Destroy(this.gameObject,1); //only destroy for now, effects later
         }
+    }
+
+    private void PlayParticleInPosition(Vector3 playPos, ParticleSystem effect)
+    {
+        effect.transform.position = playPos;
+
+        effect.gameObject.SetActive(true);
+
+        effect.Play();
     }
 
     private void OnDrawGizmos()

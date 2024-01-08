@@ -20,6 +20,9 @@ public class CannonController : MonoBehaviour
     [SerializeField] float recoilDistance;
     [SerializeField] float recoilSpeed;
 
+    [Header("Effects")]
+    [SerializeField] ParticleSystem BulletFiredFx;
+
     //variables
     #region Cannon firing calculations
     Vector3 PredictedbulletDestination;
@@ -193,6 +196,8 @@ public class CannonController : MonoBehaviour
 
         spawnedBullet.InitBulletForShooting(requiredInitialVelocity, (float)firingAngle_deg * Mathf.Deg2Rad, PredictedbulletDestination);
 
+        PlayFireEffect();
+
         canRecoil = true; //set it after shooting to avoid affecting firingPosition used in our previous calculations
     } 
     #endregion
@@ -228,6 +233,12 @@ public class CannonController : MonoBehaviour
     }
     #endregion
 
+    private void PlayFireEffect()
+    {
+        BulletFiredFx.gameObject.SetActive(true);
+
+        BulletFiredFx.Play();
+    }
 
     //validation
     #region Validation Gizmos
