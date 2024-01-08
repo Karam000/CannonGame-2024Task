@@ -60,13 +60,14 @@ public class Bullet : MonoBehaviour
         {
             print("destroyed");
             canFly = false;
+            LevelManager.Instance.bulletHitEvent.Invoke(false);
             Destroy(this.gameObject); //only destroy for now, effects later
         }
         if (other.CompareTag(MyTags.EnemyTag))
         {
             print("successful hit !!!");
             canFly = false;
-            LevelManager.Instance.enemyHitEvent.Invoke();
+            LevelManager.Instance.bulletHitEvent.Invoke(true);
             Destroy(this.gameObject); //only destroy for now, effects later
         }
     }

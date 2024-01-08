@@ -8,15 +8,20 @@ public class LevelManager : MonoBehaviour
     [SerializeField] float firingPeriod;
     [SerializeField] float firingMaxCount;
 
-    [HideInInspector] public UnityEvent enemyHitEvent;
     [HideInInspector] public UnityEvent canFireEvent;
+
+    [HideInInspector] public UnityEvent<bool> bulletHitEvent;
+
+    [HideInInspector] public UnityEvent<int> updateUIEvent;
+    [HideInInspector] public UnityEvent<float,int> levelEndEvent;
 
     Coroutine firingCoroutine;
 
-
     int score = 0;
+    int shotsCount = 0;
+    float accuracy = 0;
 
-    public static LevelManager Instance {  get; private set; }
+    public static LevelManager Instance {get; private set; }
     private void Awake()
     {
         Instance = this;
@@ -24,7 +29,9 @@ public class LevelManager : MonoBehaviour
 
     private void Start()
     {
-        enemyHitEvent.AddListener(OnEnemyHit);
+        bulletHitEvent.AddListener((isEnemy)=>OnBulletHitEvent(isEnemy));
+        levelEndEvent.AddListener((accuracy, score)=>OnLevelEnd());
+
         firingCoroutine = StartCoroutine(FireCoroutine());
     }
    
@@ -36,17 +43,32 @@ public class LevelManager : MonoBehaviour
         firingCoroutine = StartCoroutine(FireCoroutine());
     }
 
-    private void OnEnemyHit()
+    private void OnBulletHitEvent(bool isEnemy)
     {
-        if(score < firingMaxCount)
+        shotsCount++;
+        if (isEnemy)
         {
             score++;
-            //update UI here
-        }
 
-        if(score > firingMaxCount)
+            //update UI here
+            updateUIEvent.Invoke(score);
+        }
+        if (shotsCount >= firingMaxCount)
         {
             //level end here
-        }      
+
+            CalcualteAccuracy();
+
+            levelEndEvent.Invoke(accuracy, score);
+        }
+    }
+    private void OnLevelEnd()
+    {
+        StopAllCoroutines();
+    }
+
+    private void CalcualteAccuracy()
+    {
+        accuracy = (score / firingMaxCount) * 100;
     }
 }
