@@ -1,0 +1,6 @@
+* adjusted cannon gameobject hierarchy to allow for better rotation
+
+* added a collider for destroying the bullet under the ground to 
+allow for better visuals and bullet trajectory
+
+* added neccessary tags

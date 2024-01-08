@@ -1,0 +1,8 @@
+* yellow moving gizmo: realtime enemy future position at this moment
+
+* yellow static gizmo: predicted(calculated) bullet destination
+
+* green static gizmo: successful enemy hit
+
+* red static gizmo: missed enemy hit
+

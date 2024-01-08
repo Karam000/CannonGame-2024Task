@@ -1,0 +1,22 @@
+* At first I thought I'd use Newton's movement equations, then I noticed they wouldn't fit because 
+they take mass into consideration.
+
+* So I thought about the projectile movement approach
+
+* I got the range and time equations for projectile movement but couldn't solve them together to get 
+the initial velocity and firing angle (I spent two days solving them ;) )
+
+* All sources I found on the internet suggest having a constant value for at least one of them to get
+the other
+
+* Then I came across this tutorial 
+https://www.habrador.com/tutorials/unity-realistic-bullets/ 
+
+* It had a guide that helped me determine the initial firing angle and it was of 
+great help. It used an equation for initial angle to hit a known point at a known initial velocity
+
+* still I had the problem of not accurate results because I had my initial velocity constant
+
+* So I thought I'd get it from kinematic equations, they don't depend on mass or firing angle
+
+* And that's how I did it :)
