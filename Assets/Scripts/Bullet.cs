@@ -55,17 +55,16 @@ public class Bullet : MonoBehaviour
     //better to kill on collision instead of max time calculations to avoid weird looking results as we're not using accurate calculations
     private void OnTriggerEnter(Collider other) 
     {
-        //
-
         //using a class for tags to avoid misspelling
         if (other.CompareTag(MyTags.GroundTag))
         {
             print("destroyed");
             canFly = false;
-            LevelManager.Instance.bulletHitEvent.Invoke(false);
 
-            if(!CannonController.Instance.correctPositions.Contains(Target))
-                CannonController.Instance.wrongPositions.Add(Target);
+            CannonController.Instance.AddWrongPosition(Target);
+
+
+            LevelManager.Instance.bulletHitEvent.Invoke(false);
             Destroy(this.gameObject); //only destroy for now, effects later
         }
         if (other.CompareTag(MyTags.EnemyTag))
@@ -73,7 +72,8 @@ public class Bullet : MonoBehaviour
             print("successful hit !!!");
             canFly = false;
 
-            CannonController.Instance.correctPositions.Add(Target);
+            CannonController.Instance.AddCorrectPosition(Target);
+
             LevelManager.Instance.bulletHitEvent.Invoke(true);
             Destroy(this.gameObject); //only destroy for now, effects later
         }
