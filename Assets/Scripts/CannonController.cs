@@ -70,7 +70,6 @@ public class CannonController : MonoBehaviour
         targetVec = PredictedbulletEndPosition - firingPosition.position;
 
         requiredInitialVelocity = ((PredictedbulletEndPosition - firingPosition.position).magnitude - (0.5f * g * flightTime * flightTime)) / flightTime;
-        print(requiredInitialVelocity);
         CalculateAngleToHitTarget(out highAngle, out lowAngle, requiredInitialVelocity); //this gives us two angles for two curves (shallow and steep) cuz it has a square root
 
         transform.LookAt(PredictedbulletEndPosition);
@@ -176,11 +175,27 @@ public class CannonController : MonoBehaviour
     }
     #endregion
 
+
+    [HideInInspector] public List<Vector3> correctPositions;
+    [HideInInspector] public List<Vector3> wrongPositions;
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.white;
         Gizmos.DrawLine(enemy.transform.position, enemy.transform.position + enemy.transform.forward * 10);
         Gizmos.color = Color.yellow;
         Gizmos.DrawSphere(PredictedbulletEndPosition, 0.5f);
+
+
+        Gizmos.color = Color.red;
+        foreach (var pos in wrongPositions)
+        {
+            Gizmos.DrawSphere(pos, 0.5f);
+        }
+
+        Gizmos.color = Color.green;
+        foreach (var pos in correctPositions)
+        {
+            Gizmos.DrawSphere(pos, 0.5f);
+        }
     }
 }
